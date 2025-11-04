@@ -1,6 +1,27 @@
 # smart_battery_notifier.ps1
 Add-Type -AssemblyName PresentationFramework
 
+# --- Skip notification if a game is running from W:\Games ---
+$gameFolder = "W:\Games"
+$processes = Get-WmiObject Win32_Process -ErrorAction SilentlyContinue
+
+$gameRunning = $false
+foreach ($p in $processes) {
+    try {
+        if ($p.ExecutablePath -and ($p.ExecutablePath -like "$gameFolder*")) {
+            Write-Host "Game detected: $($p.Name)" -ForegroundColor Yellow
+            $gameRunning = $true
+            break
+        }
+    } catch {}
+}
+
+if ($gameRunning) {
+    Write-Host "Skipping battery alert because a game is running." -ForegroundColor Gray
+    exit 0
+}
+
+
 # --- Battery info ---
 $battery = Get-WmiObject -Class Win32_Battery -ErrorAction SilentlyContinue
 if ($null -eq $battery) {
